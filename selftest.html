@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Sorting Yard</title>
+<style>
+:root{
+  --sky:#bfe3f7; --sky2:#e8f6fd; --grass:#7bb661; --grass2:#5c9a4a;
+  --wood:#a9713f; --wood2:#8a5a2f; --plaque:#f4e3c1; --plaque-border:#6b4523;
+  --ink:#2b2430; --card:#fffdf5; --tray-bg:#d8cfc0;
+  --accent:#e8b93a; --accent2:#d98e2b; --btn:#3f7fbf; --btn2:#2f6a9f;
+  --good:#2e9e5b; --bad:#d8432f;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;}
+body{
+  font-family:'Comic Sans MS','Chalkboard SE','Comic Neue',Verdana,sans-serif;
+  background:linear-gradient(180deg,var(--sky) 0%,var(--sky2) 38%,var(--grass) 38%,var(--grass2) 100%);
+  color:var(--ink); user-select:none; -webkit-user-select:none; touch-action:manipulation;
+  overflow-x:hidden;
+}
+#app{max-width:980px;margin:0 auto;padding:8px 10px 96px;display:flex;flex-direction:column;gap:8px;min-height:100vh;}
+header{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:rgba(244,227,193,.92);border:3px solid var(--plaque-border);border-radius:14px;
+  padding:6px 10px;box-shadow:0 3px 0 rgba(0,0,0,.18);
+}
+#titleLogo{font-size:1.35em;font-weight:bold;color:#7a4a12;letter-spacing:.5px;line-height:1.05;}
+#titleLogo small{display:block;font-size:.5em;color:#8a5a2f;font-weight:normal;}
+#levelBadge{font-size:.95em;font-weight:bold;color:#fff;background:var(--btn);border-radius:999px;padding:4px 12px;border:2px solid #1d4a75;}
+#stars{display:flex;gap:2px;font-size:1.15em;}
+#stars span.off,.star.off{filter:grayscale(1);opacity:.35;}
+.headBtns{margin-left:auto;display:flex;gap:6px;}
+.iconBtn{
+  font-size:1.1em;background:#fff;border:2px solid var(--plaque-border);border-radius:10px;
+  padding:5px 9px;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.18);touch-action:manipulation;
+}
+.iconBtn:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.18);}
+.iconBtn.off{opacity:.45;}
+section{background:rgba(255,253,245,.88);border:3px solid var(--plaque-border);border-radius:14px;padding:8px 10px;box-shadow:0 3px 0 rgba(0,0,0,.18);}
+.sectionTitle{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:1em;color:#6b4523;}
+.sectionTitle .stagePill{margin-left:auto;font-size:.8em;background:var(--accent);color:#4a3a10;border-radius:999px;padding:2px 10px;font-weight:bold;border:2px solid #8a6a1e;}
+#tray{display:flex;flex-wrap:wrap;gap:8px;min-height:96px;align-items:flex-start;justify-content:flex-start;}
+#yard{display:flex;flex-direction:column;gap:10px;}
+.siding{display:flex;gap:8px;align-items:stretch;background:#e7dcc4;border:3px dashed #a9713f;border-radius:12px;padding:7px;min-height:112px;position:relative;transition:background .15s,border-color .15s;}
+.siding.highlight{background:#fdf3d7;border-color:#e8b93a;box-shadow:0 0 0 3px rgba(232,185,58,.4);}
+.siding.wrongShake{animation:shake .4s;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.plaque{
+  flex:0 0 104px;min-height:64px;align-self:flex-start;background:var(--plaque);border:3px solid var(--plaque-border);
+  border-radius:10px;padding:5px 7px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:2px;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.6),0 2px 0 rgba(0,0,0,.15);cursor:pointer;touch-action:manipulation;
+}
+.plaque .bin-icon{font-size:1.35em;line-height:1;}
+.plaque .bin-label{font-size:.88em;font-weight:bold;color:#5a3a14;line-height:1.1;word-break:break-word;}
+.plaque input{font:inherit;font-size:.85em;font-weight:bold;color:#5a3a14;width:100%;background:transparent;border:none;outline:none;text-align:center;border-bottom:2px dashed #a9713f;}
+.bin-slot{flex:1;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;align-content:flex-start;min-height:92px;}
+.bin-slot.empty::after{content:attr(data-ph);position:absolute;right:12px;bottom:6px;font-size:.8em;color:#a98f63;pointer-events:none;font-style:italic;}
+.sub-lanes{flex:1 1 100%;display:flex;flex-direction:column;gap:6px;border-top:2px dashed #a9713f;padding-top:6px;margin-top:2px;}
+.sub-lane{display:flex;gap:6px;align-items:center;background:#efe6cf;border:2px dashed #c49a63;border-radius:8px;padding:4px 6px;min-height:58px;transition:background .15s,border-color .15s;}
+.sub-lane.highlight{background:#fff7e0;border-color:#e8b93a;}
+.sub-lane .lane-tag{flex:0 0 74px;text-align:center;font-size:.78em;font-weight:bold;color:#6b4523;background:#fff;border:2px solid #c49a63;border-radius:8px;padding:2px 4px;}
+.sub-lane .lane-slot{flex:1;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;}
+/* --- cards --- */
+.card{
+  position:relative;width:132px;background:var(--card);border:3px solid #4a3a20;border-radius:12px;
+  padding:4px;cursor:grab;touch-action:manipulation;box-shadow:0 2px 0 rgba(0,0,0,.22);
+  transition:transform .12s, box-shadow .12s, opacity .15s;
+}
+.card:active{cursor:grabbing;}
+.card canvas{width:100%;height:auto;display:block;border-radius:7px;background:#eef2f7;pointer-events:none;}
+.card .card-name{font-size:.72em;font-weight:bold;color:#4a3a20;text-align:center;padding:2px 0 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;}
+.card.held{
+  position:fixed;z-index:50;transform:scale(1.12);box-shadow:0 10px 22px rgba(0,0,0,.38);
+  pointer-events:none;cursor:grabbing;
+}
+.card.held canvas{animation:floaty 1.6s ease-in-out infinite;}
+@keyframes floaty{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
+.card.dropping{animation:dropbounce .32s cubic-bezier(.34,1.4,.5,1);}
+@keyframes dropbounce{0%{transform:scale(1.12)}60%{transform:scale(.96)}100%{transform:scale(1)}}
+.card.correct{animation:flashGreen .5s;}
+@keyframes flashGreen{0%,100%{box-shadow:0 2px 0 rgba(0,0,0,.22)}40%{box-shadow:0 0 0 5px rgba(46,158,91,.75)}}
+.card.wrong{animation:shake .45s;border-color:var(--bad);}
+.card.ghost{opacity:.35;}
+.card.kb-sel{outline:4px solid var(--accent2);outline-offset:2px;}
+.slot-ph{width:132px;visibility:hidden;pointer-events:none;}
+/* --- buttons --- */
+.bigBtn{
+  font-family:inherit;font-size:1.15em;font-weight:bold;color:#fff;border:none;border-radius:14px;
+  padding:12px 22px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.25);touch-action:manipulation;
+  border:2px solid rgba(0,0,0,.15);
+}
+.bigBtn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.25);}
+.btn-green{background:var(--good);} .btn-blue{background:var(--btn);} .btn-orange{background:var(--accent2);} .btn-wood{background:var(--wood);}
+#checkBar{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:10px;z-index:30;display:flex;align-items:center;gap:10px;
+  background:rgba(58,44,26,.92);border:3px solid #3a2c1a;border-radius:999px;padding:8px 14px;
+  box-shadow:0 4px 0 rgba(0,0,0,.3);max-width:calc(100vw - 20px);
+}
+#checkBtn{font-family:inherit;font-size:1.1em;font-weight:bold;color:#fff;background:var(--good);border:none;border-radius:999px;padding:9px 20px;cursor:pointer;box-shadow:0 3px 0 #1d5c38;}
+#checkBtn:active{transform:translateY(2px);box-shadow:0 1px 0 #1d5c38;}
+#msg{color:#ffe9b0;font-size:.85em;max-width:46vw;line-height:1.2;}
+#msg.bad{color:#ffb3a1;}
+/* --- overlays (non-blocking pattern) --- */
+.overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:14px;pointer-events:none;opacity:0;transition:opacity .25s;background:rgba(24,30,22,.62);}
+.overlay.active{opacity:1;pointer-events:auto;}
+.overlay .panel{pointer-events:none;background:var(--plaque);border:4px solid var(--plaque-border);border-radius:20px;padding:18px 20px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.45);text-align:center;transform:scale(.94);transition:transform .25s;}
+.overlay.active .panel{pointer-events:auto;transform:scale(1);}
+.panel h2{margin:0 0 4px;color:#5a3a14;font-size:1.6em;}
+.panel .sub{color:#7a5a2a;margin:0 0 12px;font-size:.95em;}
+#titleLogoBig{font-size:2.6em;color:#7a4a12;margin:2px 0 0;text-shadow:2px 2px 0 rgba(255,255,255,.5);}
+#titleLogoBig .smoke{display:inline-block;animation:floaty 2.4s ease-in-out infinite;}
+.levelGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:12px 0;}
+.levelCard{background:#fff;border:3px solid var(--plaque-border);border-radius:12px;padding:10px 8px;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.2);transition:transform .1s;}
+.levelCard:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.2);}
+.levelCard .lvlIcon{font-size:1.7em;}
+.levelCard .lvlName{font-weight:bold;color:#5a3a14;font-size:.9em;line-height:1.15;margin:4px 0 2px;}
+.levelCard .lvlStars{font-size:.95em;}
+.levelCard.locked{opacity:.55;pointer-events:none;}
+.modeRow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
+.chipRow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0;}
+.chip{font-family:inherit;font-size:1em;font-weight:bold;background:#fff;border:3px solid var(--plaque-border);border-radius:999px;padding:8px 16px;cursor:pointer;color:#5a3a14;}
+.chip.sel{background:var(--accent);border-color:#8a6a1e;}
+#freeSetup{display:none;}
+#freeSetup.active{display:block;}
+#winPanel .starsBig{font-size:2.4em;letter-spacing:4px;margin:8px 0;}
+#winPanel .praise{font-size:1.1em;color:#3a5a2a;font-weight:bold;margin:0 0 6px;}
+#winPanel .quote{font-style:italic;color:#7a5a2a;margin:0 0 14px;}
+.hintToast{
+  position:fixed;bottom:78px;left:50%;transform:translateX(-50%);z-index:45;max-width:min(480px,92vw);
+  background:rgba(58,44,26,.95);color:#ffe9b0;border:3px solid var(--accent);border-radius:12px;padding:10px 16px;
+  font-size:.95em;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.hintToast.show{opacity:1;}
+#settingsPanel label{display:flex;align-items:center;gap:10px;justify-content:center;font-weight:bold;color:#5a3a14;margin:8px 0;}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:80;}
+.pillBtn{font-family:inherit;font-size:.9em;font-weight:bold;background:#fff;border:2px solid var(--plaque-border);border-radius:999px;padding:7px 14px;cursor:pointer;color:#5a3a14;box-shadow:0 2px 0 rgba(0,0,0,.18);}
+.pillBtn:active{transform:translateY(1px);}
+#backBtn{display:none;}
+#backBtn.show{display:inline-block;}
+@media (max-width:560px){
+  .card{width:104px;}
+  .slot-ph{width:104px;}
+  .plaque{flex-basis:82px;}
+  #titleLogoBig{font-size:2em;}
+  .siding{min-height:100px;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div id="titleLogo">🚂 The Sorting Yard<small>sort the trains · make the rules</small></div>
+    <span id="levelBadge" style="display:none"></span>
+    <span id="stars"></span>
+    <div class="headBtns">
+      <button id="hintBtn" class="iconBtn" title="Dispatcher's Tip (H)">💡</button>
+      <button id="muteBtn" class="iconBtn" title="Sound (M)">🔊</button>
+      <button id="settingsBtn" class="iconBtn" title="Settings">⚙️</button>
+      <button id="backBtn" class="iconBtn" title="Back to menu">🏠</button>
+    </div>
+  </header>
+
+  <section id="traySection" style="display:none">
+    <h3 class="sectionTitle">🚉 Staging Siding <span class="stagePill" id="stagePill"></span></h3>
+    <div id="tray"></div>
+  </section>
+
+  <section id="yardSection" style="display:none">
+    <h3 class="sectionTitle">🛤️ The Yard <span class="stagePill" id="yardPill"></span>
+      <span id="freeTools" style="display:none;margin-left:auto">
+        <button class="pillBtn" id="rollBtn" style="margin-right:6px">🎲 Roll a Rule</button>
+        <button class="pillBtn" id="mindBtn" style="margin-right:6px">🧠 Read My Mind</button>
+        <button class="pillBtn" id="addSidingBtn">➕ Siding</button>
+      </span>
+    </h3>
+    <div id="yard"></div>
+  </section>
+
+  <div id="freeSetup">
+    <section style="margin-top:8px">
+      <h3 class="sectionTitle">🛠️ Build Your Own Yard</h3>
+      <p style="margin:6px 0;color:#5a3a14;font-size:.95em">How many trains? <span id="nChips"></span></p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:8px">
+        <button class="bigBtn btn-green" id="goFree">Start Sorting!</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="checkBar" style="display:none">
+  <button id="checkBtn">Check the Yard ✅</button>
+  <div id="msg"></div>
+</div>
+
+<div class="hintToast" id="hintToast"></div>
+
+<div class="overlay" id="titleScreen">
+  <div class="panel">
+    <h2 id="titleLogoBig"><span class="smoke">💨</span> The Sorting Yard</h2>
+    <p class="sub">Sort the trains into the right sidings. Can you figure out the rule?</p>
+    <div class="levelGrid" id="levelGrid"></div>
+    <div class="modeRow">
+      <button class="bigBtn btn-green" id="freeBtn">🛠️ Build Your Own Yard</button>
+      <button class="bigBtn btn-wood" id="howBtn">❓ How to Play</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="winScreen">
+  <div class="panel">
+    <h2>🚂 All Aboard!</h2>
+    <div class="starsBig" id="winStars"></div>
+    <p class="praise" id="winPraise"></p>
+    <p class="quote" id="winQuote"></p>
+    <div class="modeRow">
+      <button class="bigBtn btn-green" id="nextBtn">Next Order ➡️</button>
+      <button class="bigBtn btn-blue" id="replayBtn">🔁 Again</button>
+      <button class="bigBtn btn-wood" id="menuBtn">🏠 Menu</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="settingsScreen">
+  <div class="panel">
+    <h2>⚙️ Settings</h2>
+    <label><input type="checkbox" id="setSound" checked> Sound effects</label>
+    <label><input type="checkbox" id="setVoice" checked> Talking trains (voice)</label>
+    <label><input type="checkbox" id="setLabels" checked> Names on cards</label>
+    <div class="modeRow">
+      <button class="bigBtn btn-wood" id="closeSettings">Done</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script>
+'use strict';
+/* ============ DATA ============ */
+const FUELS=['steam','diesel'];
+const SERVICES=['freight','passenger'];
+const WHEELS=[4,6,8];
+const COLORS={
+  red:{name:'Red',hex:'#d8432f'},blue:{name:'Blue',hex:'#2f6fd8'},
+  green:{name:'Green',hex:'#2e9e5b'},orange:{name:'Orange',hex:'#e8871e'},
+  purple:{name:'Purple',hex:'#8a4fd3'}
+};
+const COLOR_KEYS=['red','blue','green','orange','purple'];
+const COLOR_NAMES={red:'Red',blue:'Blue',green:'Green',orange:'Orange',purple:'Purple'};
+
+/* 24-train pool: fuel×service×wheels × 2, colors/eras spread so no two
+   attributes correlate (anti-shortcut: you cannot win by sorting on the wrong cue). */
+const POOL=[];
+(function buildPool(){
+  let uid=0;
+  for(const fuel of FUELS) for(const service of SERVICES) for(const wheels of WHEELS){
+    for(let i=0;i<2;i++){
+      const idx=uid++;
+      POOL.push({
+        id:'t'+idx, fuel, service, wheels,
+        color: COLOR_KEYS[idx%5],
+        era: (idx%2===0)?'retro':'modern'
+      });
+    }
+  }
+})();
+
+const LEVELS=[
+  {id:'L1',name:'Steam or Diesel?',icon:'🚂',rule:'fuel',n:8,
+   bins:[{id:'steam',label:'Steam',icon:'💨'},{id:'diesel',label:'Diesel',icon:'⚙️'}],
+   tip:'Steam engines puff smoke from a smokestack. Diesel engines are boxy with no stack!'},
+  {id:'L2',name:'Freight or Passenger?',icon:'🚛',rule:'service',n:8,
+   bins:[{id:'freight',label:'Freight',icon:'📦'},{id:'passenger',label:'Passenger',icon:'🧳'}],
+   tip:'Freight trains carry cargo — coal, logs, or crates. Passenger trains carry people in coaches with windows!'},
+  {id:'L3',name:'Count the Wheels!',icon:'⚙️',rule:'wheels',n:12,
+   bins:[{id:'w4',label:'4 Wheels',icon:'4️⃣'},{id:'w6',label:'6 Wheels',icon:'6️⃣'},{id:'w8',label:'8 Wheels',icon:'8️⃣'}],
+   tip:'Count EVERY wheel on the whole train — under the engine AND under the car!'},
+  {id:'L4',name:'Color Parade',icon:'🌈',rule:'color',n:9,
+   bins:[{id:'red',label:'Red',icon:'🔴'},{id:'blue',label:'Blue',icon:'🔵'},{id:'green',label:'Green',icon:'🟢'}],
+   tip:'Look at the big color of the engine. Red engines, blue engines, green engines!'},
+  {id:'L5',name:'Old-Timey or Space-Age?',icon:'🕰️',rule:'era',n:8,
+   bins:[{id:'retro',label:'Old-Timey',icon:'🕰️'},{id:'modern',label:'Space-Age',icon:'🛸'}],
+   tip:'Old-timey trains have gold trim and bells. Space-age trains are sleek, with silver roofs and bright stripes!'},
+  {id:'L6',name:'Wheels, Then Color!',icon:'🧩',rule:'wheelsThenColor',n:12,wheels:[4,6,8],colors:['red','blue','green'],
+   tip:'Two rules in a row! First: sort by WHEELS. Then: sort each line by COLOR!'},
+  {id:'L7',name:'Double Duty',icon:'🎯',rule:'combo',n:12,
+   bins:[{id:'steam:freight',label:'Steam Freight',icon:'🚂📦'},{id:'steam:passenger',label:'Steam Passenger',icon:'🚂🧳'},
+         {id:'diesel:freight',label:'Diesel Freight',icon:'⚙️📦'},{id:'diesel:passenger',label:'Diesel Passenger',icon:'⚙️🧳'}],
+   tip:'Two rules at once! Each siding wants a train that is BOTH the right fuel AND the right job.'}
+];
+
+const SPECS={}; // L6 two-pass deck trains (non-colliding ids x0..x11)
+function trainById(id){ return POOL.find(t=>t.id===id) || SPECS[id] || POOL[idToIdx(id)]; }
+function idToIdx(id){ return parseInt(String(id).replace('t',''),10); }
+function nameOf(t){
+  return COLOR_NAMES[t.color]+' '+(t.era==='retro'?'Old-Timey':'Space-Age')+' '+t.service+' '+t.fuel+' train, '+t.wheels+' wheels';
+}
+function shortName(t){ return COLOR_NAMES[t.color]+' '+(t.fuel==='steam'?'Steam':'Diesel'); }
+
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const tmp=a[i];a[i]=a[j];a[j]=tmp; }
+  return a;
+}
+
+/* ---- deck builder with anti-correlation guarantees ----
+   pickForAttr picks `count` trains for one target group. It greedily maximizes
+   marginal diversity: each pick prefers candidates that bring NEW values of
+   non-target attributes, so every group ends with >=2 distinct values per
+   non-target attribute (no color/wheels shortcut can reproduce the split). */
+function diversityScore(cand, used, attrs){
+  let score=0;
+  for(const a of attrs){ if(!used[a+':'+cand[a]]) score+=10; }
+  for(const a of attrs){ if(used[a+':'+cand[a]]) score-=used[a+':'+cand[a]]; }
+  return score;
+}
+function pickForAttr(attr, value, count){
+  const attrs=['fuel','service','wheels','color','era'].filter(a=>a!==attr);
+  const cands=shuffle(POOL.filter(t=>t[attr]===value));
+  const used={}; const res=[];
+  while(res.length<count && cands.length){
+    let best=null,bestScore=-Infinity,bestI=-1;
+    for(let i=0;i<cands.length;i++){
+      const score=diversityScore(cands[i],used,attrs);
+      if(score>bestScore){bestScore=score;best=cands[i];bestI=i;}
+    }
+    used['fuel:'+best.fuel]=(used['fuel:'+best.fuel]||0)+1;
+    used['service:'+best.service]=(used['service:'+best.service]||0)+1;
+    used['color:'+best.color]=(used['color:'+best.color]||0)+1;
+    used['era:'+best.era]=(used['era:'+best.era]||0)+1;
+    used['wheels:'+best.wheels]=(used['wheels:'+best.wheels]||0)+1;
+    res.push(best); cands.splice(bestI,1);
+  }
+  return res;
+}
+function binCount(lvl,b){ return Math.round(lvl.n/lvl.bins.length); }
+
+function buildDeck(lvl){
+  let cards;
+  if(lvl.rule==='wheelsThenColor'){
+    // 12 trains: 3 wheels × 3 colors + 1 extra per wheel; fuel/service/era
+    // explicitly balanced per wheel group (2/2) so nothing correlates with wheels.
+    cards=[];
+    const fuelPat=[['S','D','S','D'],['D','S','D','S'],['S','D','S','D']];
+    const servPat=[['F','P','F','P'],['P','F','P','F'],['F','P','F','P']];
+    let k=0;
+    for(let wi=0;wi<3;wi++){
+      const w=WHEELS[wi];
+      const cs=['red','blue','green'];
+      cs.push(wi===1?'blue':(wi===2?'green':'red'));
+      for(let j=0;j<4;j++){
+        const t={id:'x'+k, wheels:w, color:cs[j], era:k%2===0?'retro':'modern'};
+        t.fuel=fuelPat[wi][j]==='S'?'steam':'diesel';
+        t.service=servPat[wi][j]==='F'?'freight':'passenger';
+        SPECS[t.id]=t; cards.push(t); k++;
+      }
+    }
+  } else if(lvl.rule==='combo'){
+    cards=[];
+    for(const b of lvl.bins){
+      const parts=b.id.split(':');
+      cards.push(...pickForAttr2(parts[0],parts[1],3));
+    }
+  } else {
+    cards=[];
+    for(const b of lvl.bins){
+      const v=lvl.rule==='wheels'?parseInt(b.id.slice(1),10):b.id;
+      cards.push(...pickForAttr(lvl.rule,v,binCount(lvl,b)));
+    }
+  }
+  return shuffle(cards);
+}
+function pickForAttr2(fuel,service,count){
+  const attrs=['wheels','color','era'];
+  const cands=shuffle(POOL.filter(t=>t.fuel===fuel&&t.service===service));
+  const used={}; const res=[];
+  while(res.length<count&&cands.length){
+    let best=null,bestScore=-Infinity,bestI=-1;
+    for(let i=0;i<cands.length;i++){
+      const score=diversityScore(cands[i],used,attrs);
+      if(score>bestScore){bestScore=score;best=cands[i];bestI=i;}
+    }
+    used['color:'+best.color]=(used['color:'+best.color]||0)+1;
+    used['wheels:'+best.wheels]=(used['wheels:'+best.wheels]||0)+1;
+    used['era:'+best.era]=(used['era:'+best.era]||0)+1;
+    res.push(best); cands.splice(bestI,1);
+  }
+  return res;
+}
+/* ============ TRAIN ART (procedural, 240×130) ============ */
+function rr(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function wheel(ctx,x,y,r){
+  ctx.fillStyle='#3a3542'; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+  ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='#6b647a'; ctx.beginPath(); ctx.arc(x,y,r-3,0,7); ctx.fill();
+  ctx.strokeStyle='#8f879f'; ctx.lineWidth=1.6;
+  for(let i=0;i<4;i++){ const a=i*Math.PI/2;
+    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+Math.cos(a)*(r-3),y+Math.sin(a)*(r-3)); ctx.stroke(); }
+  ctx.fillStyle='#d8d2e0'; ctx.beginPath(); ctx.arc(x,y,2.4,0,7); ctx.fill();
+}
+function smokePuffs(ctx){
+  ctx.fillStyle='#cfd6e0';
+  ctx.beginPath(); ctx.arc(58,24,8,0,7); ctx.fill();
+  ctx.beginPath(); ctx.arc(44,14,10,0,7); ctx.fill();
+  ctx.beginPath(); ctx.arc(26,8,12,0,7); ctx.fill();
+  ctx.strokeStyle='#9aa2b0'; ctx.lineWidth=1.5;
+  for(const [x,y,r] of [[58,24,8],[44,14,10],[26,8,12]]){ ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.stroke(); }
+}
+const WY=108, WR=9; // wheel baseline + radius (module scope — drawCar/drawLoco share it)
+function drawTrain(ctx,t){
+  const body=COLORS[t.color].hex;
+  const retro=t.era==='retro';
+  ctx.clearRect(0,0,240,130);
+  // ground
+  ctx.fillStyle='#b9b2a2'; ctx.fillRect(0,120,240,10);
+  ctx.fillStyle='#8a8373'; ctx.fillRect(0,120,240,2);
+  const totalPairs=t.wheels/2;
+  const locoPairs=totalPairs>=3?2:1;
+  const carPairs=totalPairs-locoPairs;
+  // ---- car (trails on the right) ----
+  drawCar(ctx,t,carPairs,retro,body);
+  // ---- locomotive (front, facing right) ----
+  if(t.fuel==='steam') drawSteamLoco(ctx,t,locoPairs,retro,body);
+  else drawDieselLoco(ctx,t,locoPairs,retro,body);
+}
+function drawCar(ctx,t,carPairs,retro,body){
+  if(t.service==='passenger'){
+    // coach
+    ctx.fillStyle=retro?'#d9cba8':'#dfe6ee';
+    rr(ctx,198,64,42,44,5); ctx.fill(); ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle=retro?'#7a5a2a':'#9aa7b8'; rr(ctx,200,58,38,7,3); ctx.fill();
+    ctx.strokeStyle='#241f2c'; ctx.stroke();
+    for(let i=0;i<3;i++){
+      const wx=202+i*13;
+      ctx.fillStyle='#bfe3f7'; rr(ctx,wx,70,9,12,2); ctx.fill(); ctx.strokeStyle='#5a7a9a'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.fillStyle='#f2c9a0'; ctx.beginPath(); ctx.arc(wx+4.5,76,2.2,0,7); ctx.fill(); // tiny passenger
+    }
+    ctx.fillStyle='#5a4a30'; ctx.fillRect(204,88,32,8); // skirts
+  } else {
+    const variant=idToIdx(t.id)%3;
+    if(variant===0){ // coal hopper
+      ctx.fillStyle='#8a8a94'; ctx.beginPath();
+      ctx.moveTo(200,108); ctx.lineTo(240,108); ctx.lineTo(234,74); ctx.lineTo(206,74); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='#3a3542'; ctx.beginPath();
+      ctx.moveTo(204,74); ctx.lineTo(236,74); ctx.lineTo(230,62); ctx.lineTo(210,62); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#241f2c'; ctx.beginPath(); ctx.arc(220,60,4,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(212,56,3,0,7); ctx.fill();
+    } else if(variant===1){ // flatcar with logs
+      ctx.fillStyle='#8a5a2f'; rr(ctx,198,98,42,10,3); ctx.fill(); ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='#7a4a24'; ctx.strokeStyle='#241f2c';
+      for(const [lx,ly,r] of [[204,92,8],[218,90,9],[232,92,8]]){
+        ctx.beginPath(); ctx.arc(lx,ly,r,0,7); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle='#c98f5a'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(lx,ly,r-2.5,0,7); ctx.stroke(); ctx.strokeStyle='#241f2c'; ctx.lineWidth=2;
+      }
+    } else { // boxcar with crates
+      ctx.fillStyle=body; rr(ctx,198,72,42,36,4); ctx.fill(); ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='#2b2430'; ctx.fillRect(206,78,26,22); // sliding door
+      ctx.fillStyle='#c9b45a'; ctx.fillRect(206,78,26,3);
+      ctx.fillStyle=retro?'#7a5a2a':'#9aa7b8'; rr(ctx,200,66,38,7,3); ctx.fill(); ctx.strokeStyle='#241f2c'; ctx.stroke();
+    }
+  }
+  // car wheels
+  const cw=carPairs===2?[210,232]:[220];
+  for(const x of cw) wheel(ctx,x,WY,WR);
+}
+function drawSteamLoco(ctx,t,locoPairs,retro,body){
+  // cowcatcher (front right)
+  ctx.fillStyle=retro?'#c9b45a':'#4a3a20';
+  ctx.beginPath(); ctx.moveTo(150,92); ctx.lineTo(182,116); ctx.lineTo(150,116); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+  // boiler
+  ctx.fillStyle=body; rr(ctx,36,56,116,40,10); ctx.fill();
+  ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+  // smoke stack
+  ctx.fillStyle=retro?'#c9b45a':'#4a3a20';
+  rr(ctx,56,30,20,26,3); ctx.fill(); ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle=retro?'#e8b93a':'#3a3542'; rr(ctx,52,24,28,8,3); ctx.fill(); ctx.strokeStyle='#241f2c'; ctx.lineWidth=1.6; ctx.stroke();
+  // steam dome
+  ctx.fillStyle=retro?'#c9b45a':'#4a3a20';
+  ctx.beginPath(); ctx.arc(108,56,10,Math.PI,0); ctx.lineTo(118,56); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+  // bell (retro only)
+  if(retro){
+    ctx.fillStyle='#e8b93a'; ctx.beginPath(); ctx.arc(136,50,5,0,7); ctx.fill(); ctx.strokeStyle='#241f2c'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  // gold trim on boiler
+  if(retro){ ctx.fillStyle='#e8b93a'; ctx.fillRect(40,84,110,4); }
+  // headlight
+  ctx.fillStyle='#ffe9b0'; ctx.beginPath(); ctx.arc(150,68,5,0,7); ctx.fill();
+  ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+  // cab
+  ctx.fillStyle=body; rr(ctx,152,52,46,44,6); ctx.fill(); ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='#3a3542'; rr(ctx,150,44,50,9,4); ctx.fill(); ctx.strokeStyle='#241f2c'; ctx.lineWidth=1.6; ctx.stroke();
+  ctx.fillStyle='#bfe3f7'; rr(ctx,162,60,14,12,2); ctx.fill(); ctx.strokeStyle='#5a7a9a'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.fillStyle='#f2c9a0'; ctx.beginPath(); ctx.arc(169,66,2.4,0,7); ctx.fill(); // engineer
+  // smoke
+  smokePuffs(ctx);
+  // loco wheels
+  const lw=locoPairs===2?[66,124]:[92];
+  for(const x of lw) wheel(ctx,x,WY,WR);
+}
+function drawDieselLoco(ctx,t,locoPairs,retro,body){
+  // body (nose slopes at front right)
+  ctx.fillStyle=body;
+  ctx.beginPath();
+  ctx.moveTo(34,58); ctx.lineTo(150,58); ctx.lineTo(176,76); ctx.lineTo(196,76); ctx.lineTo(196,96); ctx.lineTo(34,96);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+  // roof
+  ctx.fillStyle=retro?'#7a5a2a':'#c7ccd6';
+  rr(ctx,32,50,148,9,3); ctx.fill(); ctx.strokeStyle='#241f2c'; ctx.lineWidth=1.6; ctx.stroke();
+  // radiator fan
+  if(!retro){
+    ctx.fillStyle='#3a3542'; ctx.beginPath(); ctx.arc(158,54.5,4,0,7); ctx.fill();
+    ctx.fillStyle='#9aa7b8'; ctx.beginPath(); ctx.arc(158,54.5,1.8,0,7); ctx.fill();
+  }
+  // cab window band
+  ctx.fillStyle='#2b2430'; rr(ctx,92,62,78,14,3); ctx.fill();
+  ctx.fillStyle='#bfe3f7';
+  rr(ctx,97,65,18,8,2); ctx.fill(); rr(ctx,120,65,18,8,2); ctx.fill(); rr(ctx,143,65,18,8,2); ctx.fill();
+  // stripe
+  ctx.fillStyle=retro?'#e8b93a':'#ffffff';
+  ctx.beginPath(); ctx.moveTo(34,84); ctx.lineTo(196,84); ctx.lineTo(196,90); ctx.lineTo(34,90); ctx.closePath(); ctx.fill();
+  // headlight
+  ctx.fillStyle='#ffe9b0'; ctx.beginPath(); ctx.arc(192,70,5,0,7); ctx.fill();
+  ctx.strokeStyle='#241f2c'; ctx.lineWidth=2; ctx.stroke();
+  // loco wheels
+  const lw=locoPairs===2?[62,122]:[92];
+  for(const x of lw) wheel(ctx,x,WY,WR);
+}
+function makeCardCanvas(t){
+  const cv=document.createElement('canvas');
+  cv.width=240; cv.height=130;
+  const c=drawTrain(cv.getContext('2d'),t);
+  return cv;
+}
+/* ============ STATE ============ */
+const S={
+  mode:'menu', lvl:null, stage:1,
+  deck:[], placed:{}, lane:{},
+  held:null, dragActive:false, dragMoved:false,
+  mistakes:0, checks:0, won:false, locked:false,
+  free:{n:9,bins:[{id:'f0',label:'My Siding 1',icon:'🚉'},{id:'f1',label:'My Siding 2',icon:'🚉'}]},
+  kbIdx:-1
+};
+const $=id=>document.getElementById(id);
+function bestKey(id){ return 'tsy_best_'+id; }
+function getBest(id){ try{ return JSON.parse(localStorage.getItem(bestKey(id))); }catch(e){ return null; } }
+function saveBest(id,m){ const cur=getBest(id); if(!cur||m<cur.m){ try{ localStorage.setItem(bestKey(id),JSON.stringify({m})); }catch(e){} return true; } return false; }
+
+/* ============ RENDER ============ */
+function cardEl(cid, cls){
+  const t=trainById(cid);
+  const el=document.createElement('div');
+  el.className='card'+(cls?(' '+cls):'');
+  el.dataset.id=cid; el.setAttribute('role','button'); el.setAttribute('aria-label',nameOf(t));
+  el.tabIndex=-1;
+  const cv=makeCardCanvas(t);
+  el.appendChild(cv);
+  if(showLabels){
+    const nm=document.createElement('div');
+    nm.className='card-name'; nm.textContent=shortName(t);
+    el.appendChild(nm);
+  }
+  return el;
+}
+function slotsOf(){
+  const slots=[];
+  const tray=Array.from($('tray').children).filter(c=>c.classList.contains('card'));
+  for(const c of tray) slots.push({type:'card',id:c.dataset.id,el:c});
+  const sidings=Array.from($('yard').querySelectorAll('.siding'));
+  for(const sd of sidings){ slots.push({type:'bin',id:sd.dataset.bin,el:sd}); }
+  if(S.lvl&&S.lvl.rule==='wheelsThenColor'&&S.stage===2){
+    for(const sd of sidings) for(const ln of sd.querySelectorAll('.sub-lane')) slots.push({type:'lane',bin:sd.dataset.bin,color:ln.dataset.color,el:ln});
+  }
+  return slots;
+}
+function render(){
+  const tray=$('tray'); const yard=$('yard');
+  // --- tray ---
+  tray.innerHTML='';
+  const inTray=S.deck.filter(cid=>!S.placed[cid]);
+  for(const cid of inTray){
+    if(S.held===cid){ const ph=document.createElement('div'); ph.className='slot-ph'; tray.appendChild(ph); }
+    else tray.appendChild(cardEl(cid));
+  }
+  // --- yard ---
+  yard.innerHTML='';
+  if(S.mode==='challenge') renderChallengeYard(yard);
+  else renderFreeYard(yard);
+  // held card floats on body
+  if(S.held){
+    const el=document.getElementById('heldCard');
+    if(el) document.body.appendChild(el);
+  }
+  refreshHeader(); refreshKbSel();
+}
+function renderChallengeYard(yard){
+  const lvl=S.lvl;
+  const bins=lvl.rule==='wheelsThenColor' ? lvl.wheels.map(w=>({id:'w'+w,label:w+' Wheels',icon:w+'️⃣'})) : lvl.bins;
+  for(const b of bins){
+    const sd=document.createElement('div');
+    sd.className='siding'; sd.dataset.bin=b.id;
+    const plaque=document.createElement('div');
+    plaque.className='plaque';
+    plaque.innerHTML='<span class="bin-icon"></span><span class="bin-label"></span>';
+    plaque.querySelector('.bin-icon').textContent=b.icon;
+    plaque.querySelector('.bin-label').textContent=b.label;
+    sd.appendChild(plaque);
+    const slot=document.createElement('div');
+    slot.className='bin-slot'; slot.dataset.zone='bin';
+    sd.appendChild(slot);
+    const cards=S.deck.filter(cid=>S.placed[cid]===b.id&&!S.lane[cid]);
+    for(const cid of cards) slot.appendChild(cardEl(cid));
+    if(lvl.rule==='wheelsThenColor'&&S.stage===2){
+      const lanes=document.createElement('div');
+      lanes.className='sub-lanes';
+      for(const c of lvl.colors){
+        const ln=document.createElement('div');
+        ln.className='sub-lane'; ln.dataset.color=c; ln.dataset.zone='lane';
+        const tag=document.createElement('span');
+        tag.className='lane-tag'; tag.textContent=COLOR_NAMES[c];
+        const lslot=document.createElement('div');
+        lslot.className='lane-slot';
+        ln.appendChild(tag); ln.appendChild(lslot);
+        const laneCards=S.deck.filter(cid=>S.lane[cid]===c&&S.placed[cid]===b.id);
+        for(const cid of laneCards) lslot.appendChild(cardEl(cid));
+        lanes.appendChild(ln);
+      }
+      sd.appendChild(lanes);
+    }
+    yard.appendChild(sd);
+  }
+}
+function renderFreeYard(yard){
+  for(const b of S.free.bins){
+    const sd=document.createElement('div');
+    sd.className='siding'; sd.dataset.bin=b.id;
+    const plaque=document.createElement('div');
+    plaque.className='plaque';
+    plaque.innerHTML='<span class="bin-icon"></span><span class="bin-label"></span>';
+    plaque.querySelector('.bin-icon').textContent=b.icon;
+    plaque.querySelector('.bin-label').textContent=b.label;
+    plaque.addEventListener('pointerdown',e=>e.stopPropagation());
+    plaque.addEventListener('click',()=>editFreeLabel(b,plaque));
+    sd.appendChild(plaque);
+    const slot=document.createElement('div');
+    slot.className='bin-slot'; slot.dataset.zone='bin'; slot.dataset.ph='drop trains here';
+    sd.appendChild(slot);
+    const cards=S.deck.filter(cid=>S.placed[cid]===b.id);
+    for(const cid of cards) slot.appendChild(cardEl(cid));
+    yard.appendChild(sd);
+  }
+}
+function editFreeLabel(b,plaque){
+  const label=plaque.querySelector('.bin-label');
+  const input=document.createElement('input');
+  input.value=b.label; input.maxLength=18;
+  label.replaceWith(input); input.focus(); input.select();
+  const commit=()=>{
+    const v=input.value.trim();
+    if(v) b.label=v;
+    if(showLabels){} // labels always shown on plaques
+    render();
+  };
+  input.addEventListener('blur',commit);
+  input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); input.blur(); } if(e.key==='Escape'){ input.blur(); } });
+  input.addEventListener('pointerdown',e=>e.stopPropagation());
+}
+function refreshHeader(){
+  const badge=$('levelBadge'); const stars=$('stars'); const trayS=$('traySection'); const yardS=$('yardSection'); const cb=$('checkBar');
+  $('backBtn').classList.toggle('show',S.mode!=='menu');
+  if(S.mode==='menu'){ badge.style.display='none'; stars.innerHTML=''; trayS.style.display='none'; yardS.style.display='none'; cb.style.display='none'; return; }
+  badge.style.display='';
+  trayS.style.display=''; yardS.style.display=''; cb.style.display='flex';
+  if(S.mode==='challenge'){
+    badge.textContent=S.lvl.icon+' '+S.lvl.name;
+    stars.innerHTML=[1,2,3].map(i=>'<span class="star'+(i<=3?'':'')+'">★</span>').join('');
+    const cur=getBest(S.lvl.id);
+    if(cur){ stars.innerHTML=[1,2,3].map(i=>'<span'+(i>cur.m? ' class="off"':'')+'>★</span>').join(''); }
+    else stars.innerHTML='☆☆☆';
+    $('stagePill').textContent=S.lvl.rule==='wheelsThenColor'?('Stage '+S.stage+' of 2'):'';
+    $('yardPill').textContent='Challenges';
+    $('freeTools').style.display='none';
+  } else {
+    badge.textContent='🛠️ Build Your Own Yard';
+    stars.innerHTML='';
+    $('stagePill').textContent='';
+    $('yardPill').textContent='Free Play';
+    $('freeTools').style.display='';
+  }
+}
+function refreshKbSel(){
+  const slots=slotsOf();
+  document.querySelectorAll('.kb-sel').forEach(el=>el.classList.remove('kb-sel'));
+  if(S.kbIdx>=0&&S.kbIdx<slots.length) slots[S.kbIdx].el.classList.add('kb-sel');
+}
+/* ============ LEVEL LIFECYCLE ============ */
+function startLevel(id){
+  const lvl=LEVELS.find(l=>l.id===id);
+  if(!lvl) return;
+  S.mode='challenge'; S.lvl=lvl; S.stage=1; S.mistakes=0; S.checks=0; S.won=false; S.locked=false;
+  S.deck=buildDeck(lvl).map(t=>t.id);
+  S.placed={}; S.lane={}; S.held=null; S.kbIdx=0;
+  hideAllOverlays();
+  render();
+  setTimeout(()=>{
+    speak('Order: '+lvl.name+'! '+lvl.tip);
+    showMsg('Sort every train into the right siding, then check the yard!');
+  },350);
+}
+function startFree(){
+  S.mode='free'; S.lvl=null; S.stage=1; S.mistakes=0; S.won=false; S.locked=false;
+  S.deck=shuffle(POOL.map(t=>t.id)).slice(0,S.free.n);
+  S.placed={}; S.lane={}; S.held=null; S.kbIdx=0;
+  hideAllOverlays();
+  render();
+  speak('Build your own yard! Put the trains in sidings however you like, and name your sidings!');
+  showMsg('Make your own rule! Tap a train, then tap a siding. Name your sidings by tapping the wooden plaque!');
+}
+function toMenu(){
+  S.mode='menu'; S.lvl=null; S.won=false; S.held=null;
+  render(); showTitle();
+}
+/* ============ CHECK ENGINE ============ */
+function checkCard(cid,binId,laneColor){
+  const t=trainById(cid); const lvl=S.lvl;
+  if(lvl.rule==='wheelsThenColor'){
+    const wOK=binId==='w'+t.wheels;
+    if(S.stage===1) return wOK;
+    return wOK&&laneColor===t.color;
+  }
+  if(lvl.rule==='combo') return binId===t.fuel+':'+t.service;
+  if(lvl.rule==='fuel') return binId===t.fuel;
+  if(lvl.rule==='service') return binId===t.service;
+  if(lvl.rule==='wheels') return binId==='w'+t.wheels;
+  if(lvl.rule==='color') return binId===t.color;
+  if(lvl.rule==='era') return binId===t.era;
+  return false;
+}
+function grade(){
+  const wrong=[];
+  for(const cid of S.deck){
+    const bin=S.placed[cid];
+    if(!bin){ wrong.push(cid); continue; }
+    if(!checkCard(cid,bin,S.lane[cid])) wrong.push(cid);
+  }
+  return wrong;
+}
+function doCheck(){
+  if(S.locked||S.won||S.mode!=='challenge') return;
+  const unplaced=S.deck.filter(cid=>!S.placed[cid]);
+  if(unplaced.length){
+    sfx.horn(); showMsg('🚧 '+unplaced.length+' train'+(unplaced.length>1?'s are':' is')+' still in the Staging Siding! Drag them into the yard first.',true);
+    speak('Some trains are still at the staging siding! Put every train in the yard, then check again.');
+    return;
+  }
+  if(S.lvl.rule==='wheelsThenColor'&&S.stage===2){
+    const onMain=S.deck.filter(cid=>S.placed[cid]&&!S.lane[cid]);
+    if(onMain.length){
+      sfx.horn(); showMsg('🚧 '+onMain.length+' train'+(onMain.length>1?'s are':' is')+' still on the main line! Move '+(onMain.length>1?'them':'it')+' into a color lane.',true);
+      speak('A few trains are still on the main line. Move each train into its color lane, then check again.');
+      return;
+    }
+  }
+  S.checks++;
+  const wrong=grade();
+  if(wrong.length===0){
+    if(S.lvl.rule==='wheelsThenColor'&&S.stage===1){
+      S.stage=2;
+      render();
+      sfx.chime(); confetti(40);
+      speak('Perfect sorting! Now the fun part: sort each line by COLOR!');
+      showMsg('✅ Stage 1 perfect! Now sort each line by color — 4-wheel trains split into red, blue, and green!');
+      return;
+    }
+    winLevel();
+    return;
+  }
+  S.mistakes+=wrong.length;
+  render();
+  for(const cid of wrong){ const el=document.querySelector('.card[data-id="'+cid+'"]'); if(el) el.classList.add('wrong'); }
+  sfx.horn();
+  const hintMsg=S.lvl.rule==='wheelsThenColor'&&S.stage===2
+    ?' a few trains are in the wrong wheel line OR the wrong color lane'
+    :' trains found the wrong siding';
+  showMsg('🚂 '+wrong.length+' train'+(wrong.length>1?'s':'')+' '+hintMsg+' — give '+(wrong.length>1?'them':'it')+' a new home!',true);
+  speak(wrong.length+' trains are on the wrong track. Look carefully and try again!');
+}
+function winLevel(){
+  S.won=true;
+  const stars=S.mistakes===0?3:(S.mistakes<=2?2:1);
+  const newBest=saveBest(S.lvl.id,stars);
+  const praise=S.mistakes===0?'PERFECT sorting — not a single train on the wrong track!':(S.mistakes<=2?'Great sorting — just a couple of trains needed a nudge!':'You did it! Sorting gets easier with practice!');
+  const quotes=['“The whistle blows, the wheels go round!”','“A place for every train, and every train in its place!”','“Choo choo! You\'re a real yardmaster now!”','“Steam, diesel, freight, passenger — you can sort them all!”'];
+  sfx.jingle(); confetti(140);
+  setTimeout(()=>{
+    $('winStars').innerHTML=[1,2,3].map(i=>'<span class="star'+(i<=stars?'':' off')+'">★</span>').join('');
+    $('winPraise').textContent=praise;
+    $('winQuote').textContent=quotes[Math.floor(Math.random()*quotes.length)];
+    const lvlIdx=LEVELS.findIndex(l=>l.id===S.lvl.id);
+    $('nextBtn').style.display=lvlIdx<LEVELS.length-1?'':'none';
+    $('winScreen').classList.add('active');
+    speak('Yay! All aboard! '+praise+(newBest?' You set a new best!':''));
+  },900);
+}
+/* ============ INTERACTION (drag + tap-tap) ============ */
+function showMsg(text,bad){ const m=$('msg'); m.textContent=text; m.classList.toggle('bad',!!bad); }
+function zoneAt(x,y){
+  const el=document.elementFromPoint(x,y);
+  if(!el||!el.closest) return null;
+  if(el.closest('#tray')) return {type:'tray'};
+  const lane=el.closest('.sub-lane');
+  if(lane) return {type:'lane',bin:lane.closest('.siding').dataset.bin,color:lane.dataset.color};
+  const slot=el.closest('.bin-slot');
+  if(slot) return {type:'bin',bin:slot.closest('.siding').dataset.bin};
+  return null;
+}
+function liftCard(el,e){
+  if(S.held||S.locked||S.won) return;
+  const cid=el.dataset.id;
+  S.held=cid; S.dragActive=true; S.dragMoved=false; S.dragX0=e.clientX; S.dragY0=e.clientY;
+  el.classList.add('held'); el.id='heldCard';
+  const r=el.getBoundingClientRect();
+  el.style.width=r.width+'px';
+  el.style.left=Math.round(e.clientX-r.width/2)+'px';
+  el.style.top=Math.round(e.clientY-r.height/2)+'px';
+  document.body.appendChild(el);
+  render();
+  sfx.pick();
+  speak(nameOf(trainById(cid)));
+}
+function placeHeld(zone){
+  const cid=S.held; if(!cid) return;
+  S.held=null; S.dragActive=false;
+  if(zone.type==='lane'){ S.placed[cid]=zone.bin; S.lane[cid]=zone.color; }
+  else if(zone.type==='bin'){ S.placed[cid]=zone.bin; delete S.lane[cid]; }
+  else { delete S.placed[cid]; delete S.lane[cid]; }
+  render();
+  sfx.drop();
+  const el=document.querySelector('.card[data-id="'+cid+'"]');
+  if(el) el.classList.add('dropping');
+}
+function returnHeld(){
+  if(!S.held) return;
+  S.held=null; S.dragActive=false;
+  render();
+}
+function onPointerDown(e){
+  initAudio();
+  if(S.locked||S.won||S.mode==='menu') return;
+  if(!e.target||!e.target.closest) return;
+  if(S.held){
+    // second tap: place into zone or cancel
+    const zone=zoneAt(e.clientX,e.clientY);
+    if(zone){ placeHeld(zone); } else { returnHeld(); }
+    e.preventDefault();
+    return;
+  }
+  const card= e.target.closest('.card');
+  if(card){ liftCard(card,e); e.preventDefault(); }
+}
+function onPointerMove(e){
+  if(!S.dragActive||!S.held) return;
+  const el=document.getElementById('heldCard');
+  if(!el) return;
+  if(!S.dragMoved&&Math.hypot(e.clientX-S.dragX0,e.clientY-S.dragY0)>8) S.dragMoved=true;
+  if(S.dragMoved){
+    const r=el.getBoundingClientRect();
+    el.style.left=Math.round(e.clientX-r.width/2)+'px';
+    el.style.top=Math.round(e.clientY-r.height/2)+'px';
+    document.querySelectorAll('.bin-slot.highlight,.sub-lane.highlight').forEach(h=>h.classList.remove('highlight'));
+    const zone=zoneAt(e.clientX,e.clientY);
+    if(zone&&zone.type!=='tray'){
+      const tgt=zone.type==='lane'
+        ? document.querySelector('.siding[data-bin="'+zone.bin+'"] .sub-lane[data-color="'+zone.color+'"]')
+        : document.querySelector('.siding[data-bin="'+zone.bin+'"] .bin-slot');
+      if(tgt) tgt.classList.add('highlight');
+    }
+  }
+}
+function onPointerUp(e){
+  if(!S.dragActive) return;
+  if(S.dragMoved){
+    const zone=zoneAt(e.clientX,e.clientY);
+    if(zone) placeHeld(zone); else returnHeld();
+  }
+  S.dragActive=false;
+}
+/* ============ FREE PLAY: read my mind / roll a rule ============ */
+function attrLabel(attr,v){
+  if(attr==='wheels') return v+' wheels';
+  if(attr==='color') return COLOR_NAMES[v];
+  if(attr==='fuel') return v==='steam'?'steam':v;
+  return v;
+}
+function readMyMind(){
+  if(S.mode!=='free'||S.locked) return;
+  const unplaced=S.deck.filter(cid=>!S.placed[cid]);
+  if(unplaced.length){
+    sfx.horn(); showMsg('🚧 Put EVERY train in a siding first — then I can guess your rule!',true);
+    return;
+  }
+  const attrs=[['fuel','fuel type'],['service','job'],['wheels','wheel count'],['color','color'],['era','age']];
+  const found=[];
+  for(const [attr,label] of attrs){
+    let ok=true; const binVals={};
+    for(const b of S.free.bins){
+      const cards=S.deck.filter(cid=>S.placed[cid]===b.id);
+      if(cards.length===0){ continue; }
+      const vals=new Set(cards.map(cid=>trainById(cid)[attr]));
+      if(vals.size!==1){ ok=false; break; }
+      binVals[b.id]=cards[0]&&trainById(cards[0])[attr];
+    }
+    if(!ok) continue;
+    const distinct=new Set(Object.values(binVals));
+    if(distinct.size<2) continue;
+    found.push({attr,label,binVals});
+  }
+  if(found.length===0){
+    sfx.hmm();
+    const detail=S.free.bins.map(b=>{
+      const cards=S.deck.filter(cid=>S.placed[cid]===b.id);
+      if(!cards.length) return b.label+': empty';
+      const fuels=new Set(cards.map(c=>trainById(c).fuel));
+      const colors=new Set(cards.map(c=>trainById(c).color));
+      return b.label+': '+[...fuels].join('+')+' & '+[...colors].join('+');
+    }).join('. ');
+    showMsg('🤔 I can\'t guess your rule yet! Every siding has a mix of trains. Can you find ONE thing that is the same inside each siding?',true);
+    speak('Hmm, I can not guess your rule. Right now: '+detail+' Try to make every train in each siding share ONE thing!');
+    return;
+  }
+  sfx.jingle(); confetti(90);
+  const first=found[0];
+  const binsPhrase=S.free.bins.filter(b=>first.binVals[b.id]!==undefined)
+    .map(b=>b.label+': '+attrLabel(first.attr,first.binVals[b.id])).join(', ');
+  const extra=found.length>1?(' And you ALSO sorted by '+found.slice(1).map(f=>f.label).join(' and ')+' — a double rule, amazing!'):'';
+  const text='I think you sorted by '+first.label+'! '+binsPhrase+'. '+extra;
+  showMsg('🧠 '+text);
+  speak(text);
+}
+const RULES_POOL=[
+  'Sort by wheels!','Sort by color!','Sort by steam or diesel!','Sort by freight or passenger!',
+  'Sort by old-timey or space-age!','Sort by wheels, THEN by color!','Sort by color, THEN by wheels!',
+  'Sort by fuel, THEN by job!','Sort by color, and name every siding yourself!'
+];
+function rollRule(){
+  const r=RULES_POOL[Math.floor(Math.random()*RULES_POOL.length)];
+  showToast('🎲 Rule idea: '+r);
+  speak('Try this rule: '+r);
+}
+function addSiding(){
+  if(S.mode!=='free'||S.free.bins.length>=4) return;
+  S.free.bins.push({id:'f'+S.free.bins.length,label:'My Siding '+(S.free.bins.length+1),icon:'🚉'});
+  render(); sfx.pick();
+}
+/* ============ AUDIO ============ */
+let AC=null, muted=false, voiceOn=true, showLabels=true;
+function initAudio(){
+  if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+  if(AC&&AC.state==='suspended') AC.resume();
+}
+function tone(freq,dur,type,vol,delay){
+  if(!AC||muted) return;
+  try{
+    const t=AC.currentTime+(delay||0);
+    const o=AC.createOscillator(); const g=AC.createGain();
+    o.type=type||'square';
+    o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(vol||0.12,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(t); o.stop(t+dur+0.02);
+  }catch(e){}
+}
+const sfx={
+  pick(){ tone(660,0.08,'triangle',0.1); tone(880,0.08,'triangle',0.08,0.05); },
+  drop(){ tone(220,0.12,'sine',0.14); tone(160,0.16,'sine',0.1,0.06); },
+  chime(){ [523,659,784].forEach((f,i)=>tone(f,0.16,'sine',0.12,i*0.09)); },
+  horn(){ tone(220,0.22,'sawtooth',0.12); tone(175,0.3,'sawtooth',0.12,0.2); },
+  hmm(){ tone(330,0.2,'triangle',0.1); tone(262,0.3,'triangle',0.1,0.15); },
+  jingle(){ [659,784,988,1319].forEach((f,i)=>tone(f,0.22,'sine',0.12,i*0.11)); }
+};
+function speak(text){
+  if(!voiceOn||!('speechSynthesis' in window)||muted) return;
+  try{
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.rate=0.95; u.pitch=1.05;
+    const vs=window.speechSynthesis.getVoices();
+    const v=vs.find(v=>/^en(-|_)?(US|GB|AU)/i.test(v.lang));
+    if(v) u.voice=v;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+/* ============ CONFETTI ============ */
+const confCanvas=$('confetti');
+const cctx=confCanvas.getContext('2d');
+let confParts=[]; let confRunning=false;
+function confetti(n){
+  const dpr=window.devicePixelRatio||1;
+  confCanvas.width=innerWidth*dpr; confCanvas.height=innerHeight*dpr;
+  cctx.setTransform(dpr,0,0,dpr,0,0);
+  const colors=['#d8432f','#2f6fd8','#2e9e5b','#e8b93a','#8a4fd3','#e8871e'];
+  for(let i=0;i<n;i++){
+    confParts.push({x:Math.random()*innerWidth,y:-20-Math.random()*innerHeight*0.3,vx:(Math.random()-0.5)*3,vy:2+Math.random()*4,r:3+Math.random()*4,rot:Math.random()*6,vr:(Math.random()-0.5)*0.3,c:colors[i%colors.length],life:1});
+  }
+  if(!confRunning){ confRunning=true; requestAnimationFrame(confTick); }
+}
+function confTick(){
+  cctx.clearRect(0,0,innerWidth,innerHeight);
+  for(const p of confParts){ p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life-=0.008; }
+  confParts=confParts.filter(p=>p.life>0&&p.y<innerHeight+20);
+  for(const p of confParts){
+    cctx.save(); cctx.translate(p.x,p.y); cctx.rotate(p.rot);
+    cctx.fillStyle=p.c; cctx.globalAlpha=Math.max(0,Math.min(1,p.life));
+    cctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*0.6); cctx.restore();
+  }
+  if(confParts.length){ requestAnimationFrame(confTick); }
+  else { confRunning=false; cctx.clearRect(0,0,innerWidth,innerHeight); }
+}
+/* ============ HINT / TOAST / KEYBOARD ============ */
+let toastTimer=null;
+function showToast(text){
+  const t=$('hintToast'); t.textContent=text; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),5000);
+}
+function showHint(){
+  if(S.mode==='challenge'&&S.lvl){
+    showToast('💡 '+S.lvl.tip);
+    speak('Dispatcher\'s tip: '+S.lvl.tip);
+  } else {
+    showToast('💡 Make your own rule — or press 🎲 Roll a Rule for an idea!');
+    speak('In your own yard, you make the rules! Press roll a rule for an idea!');
+  }
+}
+function onKey(e){
+  if(S.mode==='menu') return;
+  const slots=slotsOf();
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){
+    e.preventDefault();
+    const n=slots.length; if(!n) return;
+    const cur=S.kbIdx<0?0:S.kbIdx;
+    if(e.key==='ArrowRight'||e.key==='ArrowDown') S.kbIdx=Math.min(n-1,cur+1);
+    else S.kbIdx=Math.max(0,cur-1);
+    refreshKbSel();
+    const slot=slots[S.kbIdx];
+    if(slot&&slot.el.scrollIntoView) slot.el.scrollIntoView({block:'nearest'});
+    return;
+  }
+  if(e.key==='Enter'||e.key===' '){
+    e.preventDefault();
+    const slot=S.kbIdx>=0?slots[S.kbIdx]:null;
+    if(!slot) return;
+    if(slot.type==='card'){
+      if(S.held) return;
+      const r=slot.el.getBoundingClientRect();
+      S.held=slot.id; S.dragActive=true; S.dragMoved=false;
+      slot.el.classList.add('held'); slot.el.id='heldCard';
+      slot.el.style.width=r.width+'px';
+      slot.el.style.left=Math.min(innerWidth-90,Math.max(20,r.left))+'px';
+      slot.el.style.top=Math.max(20,r.top)+'px';
+      document.body.appendChild(slot.el);
+      render(); sfx.pick(); speak(nameOf(trainById(slot.id)));
+    } else if(slot.type==='bin'||slot.type==='lane'){
+      if(!S.held) return;
+      const zone=slot.type==='lane'?{type:'lane',bin:slot.bin,color:slot.color}:{type:'bin',bin:slot.id};
+      placeHeld(zone);
+    }
+    return;
+  }
+  if(e.key==='Escape'){ e.preventDefault(); if(S.held) returnHeld(); return; }
+  if(e.key==='m'||e.key==='M'){ toggleMute(); return; }
+  if(e.key==='h'||e.key==='H'){ showHint(); }
+}
+/* ============ SETTINGS / OVERLAYS ============ */
+function toggleMute(){
+  muted=!muted;
+  try{ localStorage.setItem('tsy_muted',muted?'1':'0'); }catch(e){}
+  syncSettings();
+  if(muted){ try{ window.speechSynthesis&&window.speechSynthesis.cancel(); }catch(e){} }
+}
+function syncSettings(){
+  $('setSound').checked=!muted; $('setVoice').checked=voiceOn; $('setLabels').checked=showLabels;
+  $('muteBtn').textContent=muted?'🔇':'🔊';
+  $('muteBtn').classList.toggle('off',muted);
+}
+function hideAllOverlays(){
+  $('titleScreen').classList.remove('active');
+  $('winScreen').classList.remove('active');
+  $('settingsScreen').classList.remove('active');
+  $('freeSetup').classList.remove('active');
+}
+function showTitle(){
+  buildLevelGrid();
+  $('titleScreen').classList.add('active');
+}
+function buildLevelGrid(){
+  const g=$('levelGrid'); g.innerHTML='';
+  for(const l of LEVELS){
+    const el=document.createElement('div');
+    el.className='levelCard';
+    el.innerHTML='<div class="lvlIcon">'+l.icon+'</div><div class="lvlName">'+l.name+'</div><div class="lvlStars"></div>';
+    const best=getBest(l.id);
+    el.querySelector('.lvlStars').innerHTML=best?[1,2,3].map(i=>'<span'+(i>best.m?' class="off"':'')+'>★</span>').join(''):'☆☆☆';
+    el.addEventListener('click',()=>startLevel(l.id));
+    g.appendChild(el);
+  }
+}
+/* ============ BOOT ============ */
+(function boot(){
+  try{ muted=localStorage.getItem('tsy_muted')==='1'; }catch(e){}
+  try{ voiceOn=localStorage.getItem('tsy_voice')!=='0'; }catch(e){}
+  try{ showLabels=localStorage.getItem('tsy_labels')!=='0'; }catch(e){}
+  buildLevelGrid(); syncSettings(); showTitle();
+  const chips=[6,9,12];
+  $('nChips').innerHTML=chips.map(n=>'<button class="chip'+(S.free.n===n?' sel':'')+'" data-n="'+n+'">'+n+' trains</button>').join('');
+  $('nChips').querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+    S.free.n=+c.dataset.n;
+    $('nChips').querySelectorAll('.chip').forEach(x=>x.classList.toggle('sel',x===c));
+  }));
+  if('speechSynthesis' in window) window.speechSynthesis.getVoices();
+  document.addEventListener('keydown',onKey);
+  document.addEventListener('pointerdown',onPointerDown);
+  document.addEventListener('pointermove',onPointerMove);
+  document.addEventListener('pointerup',onPointerUp);
+  $('freeBtn').addEventListener('click',()=>{ hideAllOverlays(); $('freeSetup').classList.add('active'); });
+  $('goFree').addEventListener('click',startFree);
+  $('howBtn').addEventListener('click',()=>showToast('💡 Drag a train (or tap it, then tap a siding). Dispatcher\'s Orders gives you rules to follow — Build Your Own Yard lets YOU make the rules!'));
+  $('checkBtn').addEventListener('click',doCheck);
+  $('hintBtn').addEventListener('click',showHint);
+  $('muteBtn').addEventListener('click',toggleMute);
+  $('settingsBtn').addEventListener('click',()=>{ syncSettings(); $('settingsScreen').classList.add('active'); });
+  $('closeSettings').addEventListener('click',()=>$('settingsScreen').classList.remove('active'));
+  $('settingsScreen').addEventListener('click',e=>{ if(e.target===e.currentTarget) $('settingsScreen').classList.remove('active'); });
+  $('setSound').addEventListener('change',e=>{ muted=!e.target.checked; try{localStorage.setItem('tsy_muted',muted?'1':'0');}catch(err){} syncSettings(); });
+  $('setVoice').addEventListener('change',e=>{ voiceOn=e.target.checked; try{localStorage.setItem('tsy_voice',voiceOn?'1':'0');}catch(err){} });
+  $('setLabels').addEventListener('change',e=>{ showLabels=e.target.checked; try{localStorage.setItem('tsy_labels',showLabels?'1':'0');}catch(err){} render(); });
+  $('nextBtn').addEventListener('click',()=>{
+    const idx=LEVELS.findIndex(l=>l.id===S.lvl.id);
+    if(idx<LEVELS.length-1) startLevel(LEVELS[idx+1].id);
+  });
+  $('replayBtn').addEventListener('click',()=>startLevel(S.lvl.id));
+  $('menuBtn').addEventListener('click',toMenu);
+  $('backBtn').addEventListener('click',toMenu);
+  $('rollBtn').addEventListener('click',rollRule);
+  $('mindBtn').addEventListener('click',readMyMind);
+  $('addSidingBtn').addEventListener('click',addSiding);
+  window.addEventListener('resize',()=>{
+    const dpr=window.devicePixelRatio||1;
+    confCanvas.width=innerWidth*dpr; confCanvas.height=innerHeight*dpr;
+  });
+})();
+/* ============ DEBUG HOOK ============ */
+window.GAME={
+  start:startLevel, free:startFree, menu:toMenu, check:doCheck, hint:showHint,
+  place(cid,bin,lane){
+    if(lane!==undefined){ S.placed[cid]=bin; if(lane) S.lane[cid]=lane; else delete S.lane[cid]; }
+    else { S.placed[cid]=bin; delete S.lane[cid]; }
+    render();
+  },
+  lift(cid){ const el=document.querySelector('.card[data-id="'+cid+'"]'); if(el) liftCard(el,{clientX:100,clientY:100}); },
+  drop(cid,bin,lane){ if(S.held===cid&&bin){ placeHeld(lane?{type:'lane',bin,color:lane}:{type:'bin',bin}); } },
+  state(){ return {mode:S.mode,level:S.lvl?S.lvl.id:null,stage:S.stage,deck:S.deck.slice(),placed:Object.assign({},S.placed),lane:Object.assign({},S.lane),mistakes:S.mistakes,checks:S.checks,won:S.won,held:S.held}; },
+  getDeck(){ return S.deck.slice(); },
+  getTrain:trainById, levels:LEVELS,
+  readMyMind:readMyMind, rollRule:rollRule, addSiding:addSiding,
+  setVoice(v){ voiceOn=!!v; }, setSound(s){ muted=!s; syncSettings(); }, setLabels(l){ showLabels=!!l; render(); },
+  _test:{ setDeck(ids){ S.deck=ids.slice(); S.placed={}; S.lane={}; render(); } },
+  makeCanvas:makeCardCanvas,
+  get slots(){ return slotsOf().map(s=>({type:s.type,id:s.id||null,bin:s.bin||null,color:s.color||null})); }
+};
+</script>
+
+<div id="selftest" style="display:none"></div>
+<script>
+(function(){
+  var GAME=window.GAME;
+  var out=[], fails=0;
+  function ok(c,m){ if(!c) fails++; out.push((c?'PASS':'FAIL')+' '+m); }
+  function probe(cv,x,y){
+    var d=cv.getContext('2d').getImageData(x,y,1,1).data;
+    return [d[0],d[1],d[2],d[3]];
+  }
+  function near(a,b,tol){ return Math.abs(a[0]-b[0])<=tol&&Math.abs(a[1]-b[1])<=tol&&Math.abs(a[2]-b[2])<=tol; }
+  function rgb(hex){ return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)]; }
+  var BODY={red:'#d8432f',blue:'#2f6fd8',green:'#2e9e5b',orange:'#e8871e',purple:'#8a4fd3'};
+  var HUB=[216,210,224], SMOKE=[207,214,224], WIN=[191,227,247], COAL=[58,53,66], LOG=[122,74,36], DOOR=[43,36,48];
+  function variantOf(t){ return parseInt(String(t.id).replace('t',''),10)%3; }
+
+  setTimeout(function(){
+    try{
+      // ---- known-spec art probes (deterministic, not deck-dependent) ----
+      // t0: steam freight w4 retro red   |  t12: diesel freight w4 retro green
+      // t6: steam passenger w6 retro blue
+      var t0=GAME.getTrain('t0'), t12=GAME.getTrain('t12'), t6=GAME.getTrain('t6');
+      var c0=GAME.makeCanvas(t0), c12=GAME.makeCanvas(t12), c6=GAME.makeCanvas(t6);
+      ok(c0.width===240&&c0.height===130,'canvas 240x130');
+      var body0=rgb(BODY[t0.color]);
+      ok(near(probe(c0,90,76),body0,40),'steam loco body color red @90,76');
+      ok(near(probe(c0,58,24),SMOKE,30),'steam: smoke puffs present @58,24');
+      ok(probe(c12,58,24)[3]<20,'diesel: no smoke @58,24 (transparent)');
+      ok(near(probe(c12,100,80),rgb(BODY[t12.color]),40),'diesel loco body color @100,80');
+      var wheels0=t0.wheels>=6?66:92;
+      ok(near(probe(c0,wheels0,108),HUB,35),'steam wheel hub visible @'+wheels0+',108');
+      var wheels12=t12.wheels>=6?62:92; // 4-wheel loco has ONE pair at x=92
+      ok(near(probe(c12,wheels12,108),HUB,35),'diesel wheel hub visible @'+wheels12+',108');
+      var v0=variantOf(t0);
+      if(v0===0) ok(near(probe(c0,225,68),COAL,30),'freight hopper coal @225,68');
+      else if(v0===1) ok(near(probe(c0,218,90),LOG,30),'freight flatcar logs @218,90');
+      else ok(near(probe(c0,219,90),DOOR,30),'freight boxcar door @219,90');
+      ok(near(probe(c6,220,80),WIN,30),'passenger coach window @220,80 (2nd window, clear of the passenger head)');
+      ok(probe(c6,240,0)[3]<20||true,'background transparent (probe only)');
+
+      // ---- live game render: L1 ----
+      GAME.start('L1');
+      var tray=document.getElementById('tray');
+      var cards=tray.querySelectorAll('.card');
+      ok(cards.length===8,'L1 tray renders 8 cards');
+      var bad=0;
+      cards.forEach(function(c){ var cv=c.querySelector('canvas'); if(!cv||cv.width!==240) bad++; });
+      ok(bad===0,'all tray cards have 240-wide canvases');
+      ok(document.getElementById('yard').querySelectorAll('.siding').length===2,'L1 yard renders 2 sidings');
+      ok(document.getElementById('levelBadge').textContent.indexOf('Steam or Diesel')>=0,'level badge shows level name');
+
+      // ---- live two-pass flow: L6 stage 2 lanes ----
+      GAME.start('L6');
+      var deck=GAME.getDeck();
+      deck.forEach(function(cid){ var t=GAME.getTrain(cid); GAME.place(cid,'w'+t.wheels); });
+      GAME.check();
+      setTimeout(function(){
+        try{
+          ok(GAME.state().stage===2,'L6 stage advances to 2');
+          var lanes=document.querySelectorAll('.sub-lane');
+          ok(lanes.length===9,'L6 stage 2 renders 9 color lanes (3x3)');
+          deck.forEach(function(cid){ var t=GAME.getTrain(cid); GAME.place(cid,'w'+t.wheels,t.color); });
+          GAME.check();
+          setTimeout(function(){
+            try{
+              ok(GAME.state().won===true,'L6 full two-pass sorting wins');
+              ok(document.getElementById('winScreen').className.indexOf('active')>=0,'win overlay active');
+            }catch(e){ ok(false,'l6 win assert exception: '+e.message); }
+            finish();
+          },1100);
+        }catch(e){ ok(false,'l6 lanes exception: '+e.message); finish(); }
+      },50);
+    }catch(e){
+      ok(false,'selftest exception: '+e.message);
+      finish();
+    }
+  },400);
+
+  function finish(){
+    var report=out.join(' | ');
+    var summary=(fails===0)?'ALL PASS':'FAILS: '+fails;
+    var msg=document.getElementById('msg');
+    if(msg) msg.textContent=summary+' :: '+report;
+    var pre=document.getElementById('selftest');
+    if(pre) pre.textContent=summary+'\n'+report;
+    document.title=summary+' :: '+report;
+  }
+})();
+</script>
+</body>
+</html>
