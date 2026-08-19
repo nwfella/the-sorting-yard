@@ -372,6 +372,15 @@ console.log('== Drag-tap interaction via pointer handlers ==');
   for(const h of mv) h({clientX:260,clientY:240});
   for(const h of pu) h({clientX:260,clientY:240});
   ok(GAME.state().held===null,'drag released over nothing -> returned to origin');
+  // pointercancel (browser steals the gesture, e.g. pull-to-refresh) -> card must return, not freeze
+  const card2=GAME.state().deck[0];
+  const el2=findCard(card2);
+  el2.closest=sel=>sel==='.card'?el2:null;
+  for(const h of pd) h({target:el2,clientX:200,clientY:200,preventDefault(){}});
+  ok(GAME.state().held===card2,'pointercancel test: card lifted');
+  const pc=doc._handlers['pointercancel']||[];
+  for(const h of pc) h({});
+  ok(GAME.state().held===null&&GAME.state().deck.indexOf(card2)>=0,'pointercancel returns held card to tray');
 }
 
 console.log('\n'+pass+' passed, '+fail+' failed');

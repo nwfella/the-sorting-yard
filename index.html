@@ -13,7 +13,7 @@
   --good:#2e9e5b; --bad:#d8432f;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-html,body{margin:0;padding:0;height:100%;}
+html,body{margin:0;padding:0;height:100%;overscroll-behavior-y:contain;}
 body{
   font-family:'Comic Sans MS','Chalkboard SE','Comic Neue',Verdana,sans-serif;
   background:linear-gradient(180deg,var(--sky) 0%,var(--sky2) 38%,var(--grass) 38%,var(--grass2) 100%);
@@ -65,7 +65,7 @@ section{background:rgba(255,253,245,.88);border:3px solid var(--plaque-border);b
 /* --- cards --- */
 .card{
   position:relative;width:132px;background:var(--card);border:3px solid #4a3a20;border-radius:12px;
-  padding:4px;cursor:grab;touch-action:manipulation;box-shadow:0 2px 0 rgba(0,0,0,.22);
+  padding:4px;cursor:grab;touch-action:none;-webkit-user-drag:none;box-shadow:0 2px 0 rgba(0,0,0,.22);
   transition:transform .12s, box-shadow .12s, opacity .15s;
 }
 .card:active{cursor:grabbing;}
@@ -876,6 +876,10 @@ function onPointerMove(e){
     const r=el.getBoundingClientRect();
     el.style.left=Math.round(e.clientX-r.width/2)+'px';
     el.style.top=Math.round(e.clientY-r.height/2)+'px';
+    // auto-scroll near viewport edges so the whole yard is reachable mid-drag
+    const MARGIN=56;
+    if(e.clientY>innerHeight-MARGIN&&window.scrollBy) window.scrollBy(0,16);
+    else if(e.clientY<MARGIN&&window.scrollBy) window.scrollBy(0,-16);
     document.querySelectorAll('.bin-slot.highlight,.sub-lane.highlight').forEach(h=>h.classList.remove('highlight'));
     const zone=zoneAt(e.clientX,e.clientY);
     if(zone&&zone.type!=='tray'){
@@ -885,6 +889,10 @@ function onPointerMove(e){
       if(tgt) tgt.classList.add('highlight');
     }
   }
+}
+function onPointerCancel(){
+  if(S.held) returnHeld();
+  S.dragActive=false;
 }
 function onPointerUp(e){
   if(!S.dragActive) return;
@@ -1131,6 +1139,7 @@ function buildLevelGrid(){
   document.addEventListener('pointerdown',onPointerDown);
   document.addEventListener('pointermove',onPointerMove);
   document.addEventListener('pointerup',onPointerUp);
+  document.addEventListener('pointercancel',onPointerCancel);
   $('freeBtn').addEventListener('click',()=>{ hideAllOverlays(); $('freeSetup').classList.add('active'); });
   $('goFree').addEventListener('click',startFree);
   $('howBtn').addEventListener('click',()=>showToast('💡 Drag a train (or tap it, then tap a siding). Dispatcher\'s Orders gives you rules to follow — Build Your Own Yard lets YOU make the rules!'));
